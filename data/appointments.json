@@ -1,0 +1,14 @@
+{
+  "2025-08-03": [
+    {
+      "appointmentId": "appointment_1753978550946_hp61zb3w5",
+      "selectedTime": "9:00",
+      "fullName": "ךלחי",
+      "phoneNumber": "0506665558",
+      "serviceType": "תספורת+עיצוב זקן",
+      "confirmed": true,
+      "timestamp": "2025-07-31T16:15:50.946Z",
+      "status": "completed"
+    }
+  ]
+}
