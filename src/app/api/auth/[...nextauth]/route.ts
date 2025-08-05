@@ -44,7 +44,7 @@ const handler = NextAuth({
     },
     async redirect({ url, baseUrl }) {
       console.log("Redirect callback:", { url, baseUrl });
-      // Always redirect to home page after successful sign in
+      // Redirect to home page after successful sign in
       return `${baseUrl}/home`;
     },
   },

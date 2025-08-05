@@ -11,11 +11,11 @@ export default function Login() {
 
   // Redirect if already signed in
   useEffect(() => {
-    if (session) {
+    if (session && status === "authenticated") {
       console.log("User is signed in, redirecting to home:", session);
       router.push("/home");
     }
-  }, [session, router]);
+  }, [session, status, router]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -24,14 +24,22 @@ export default function Login() {
       
       console.log("Starting Google sign in...");
       
-      // Use redirect: true to automatically redirect after successful sign in
-      await signIn("google", { 
+      // Use redirect: false to handle the redirect manually
+      const result = await signIn("google", { 
         callbackUrl: "/home",
-        redirect: true 
+        redirect: false 
       });
       
-      console.log("Google sign in completed");
-      // The redirect will happen automatically after successful sign in
+      console.log("Google sign in result:", result);
+      
+      if (result?.error) {
+        console.error("Google sign in error:", result.error);
+        setErrorMessage("שגיאה בהתחברות עם גוגל, נסה שוב");
+        setIsGoogleLoading(false);
+      } else if (result?.ok) {
+        console.log("Google sign in successful, redirecting...");
+        router.push("/home");
+      }
     } catch (error) {
       console.error("Google sign in error:", error);
       setErrorMessage("שגיאה בהתחברות עם גוגל, נסה שוב");
@@ -49,6 +57,21 @@ export default function Login() {
         color: 'white'
       }}>
         טוען...
+      </div>
+    );
+  }
+
+  // If user is already authenticated, show loading while redirecting
+  if (status === "authenticated" && session) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white'
+      }}>
+        מפנה לדף הבית...
       </div>
     );
   }
