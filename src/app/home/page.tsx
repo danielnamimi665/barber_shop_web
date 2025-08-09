@@ -94,7 +94,7 @@ export default function Home() {
         >
           {/* Daniel Logo */}
           <img
-            src="/logodaniel.png.png" // Custom logo
+            src="/logodaniel.png" // Custom logo
             alt="Daniel Hair Design Logo"
             style={{
               width: '100%',

@@ -147,7 +147,7 @@ export default function Login() {
       <div
         className="login-box"
         style={{
-          backgroundImage: 'url(/grey.png.jpg)', // Background image
+          backgroundImage: 'url(/grey.png)', // Background image
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
@@ -179,7 +179,7 @@ export default function Login() {
         }}>
           {/* Daniel Logo */}
           <img 
-            src="/logodaniel.png.png" // Custom logo
+            src="/logodaniel.png" // Custom logo
             alt="Daniel Hair Design Logo"
             style={{
               width: '100%',
@@ -255,7 +255,7 @@ export default function Login() {
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
             <img 
-              src="/waze.png.png" 
+              src="/waze.png" 
               alt="Waze"
               style={{
                 width: '48px', // Image size
@@ -289,7 +289,7 @@ export default function Login() {
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
             <img 
-              src="/telephone.png.png" 
+              src="/telephone.png" 
               alt="Phone"
               style={{
                 width: '48px',
@@ -324,7 +324,7 @@ export default function Login() {
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
             <img 
-              src="/whatsapp.png.png" 
+              src="/whatsapp.png" 
               alt="WhatsApp"
               style={{
                 width: '48px',
