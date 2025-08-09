@@ -76,25 +76,24 @@ export default function Home() {
       }}>
         <div
           style={{
-            backgroundColor: 'rgba(31, 41, 55, 0.8)',
-            border: '3px solid black', // Changed border
+            width: '240px',
+            height: '240px',
             borderRadius: '50%',
-            width: 'min(80vw, 500px)',
-            height: 'min(80vw, 500px)',
+            background: 'transparent', // Transparent background
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-            backdropFilter: 'blur(10px)',
-            cursor: 'pointer',
+            border: '3px solid black', // Black border
+            marginBottom: '20px',
             overflow: 'hidden',
-            position: 'relative'
+            position: 'relative',
+            cursor: 'pointer'
           }}
           onClick={() => router.push('/services')}
         >
           {/* Daniel Logo */}
           <img
-            src="/logodaniel.png" // Custom logo
+            src="/daniellogo.png" // Custom logo
             alt="Daniel Hair Design Logo"
             style={{
               width: '100%',
