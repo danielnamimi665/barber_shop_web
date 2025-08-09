@@ -1,0 +1,4 @@
+[33m4cacfb4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m הסרת מפתחות סודיים והעברתם למשתני סביבה
+[33mf9b4a0e[m שיפורים באתר
+[33m6872f06[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m disable ESLint during build
+[33m89bc513[m first commit
