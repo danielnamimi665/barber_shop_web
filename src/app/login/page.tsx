@@ -30,31 +30,23 @@ export default function Login() {
 
   const handleGoogleSignIn = async () => {
     console.log("handleGoogleSignIn function called!");
+    
     try {
       setIsGoogleLoading(true);
       setErrorMessage("");
       
-      console.log("Starting Google sign in...");
-      console.log("Current URL:", window.location.href);
+      console.log("Starting Google sign in with redirect...");
       
-      // Simple approach - let NextAuth handle the redirect
-      const result = await signIn("google", { 
-        callbackUrl: "/home",
-        redirect: true 
+      // Force redirect by not awaiting the result
+      signIn("google", { 
+        callbackUrl: "/home"
       });
       
-      console.log("Sign in result:", result);
-      
-      // If we get here, something might have gone wrong
-      if (result?.error) {
-        console.error("Sign in error:", result.error);
-        setErrorMessage(`שגיאה: ${result.error}`);
-        setIsGoogleLoading(false);
-      }
+      // Don't set loading to false - let the redirect handle it
       
     } catch (error) {
       console.error("Google sign in error:", error);
-      setErrorMessage("שגיאה בהתחברות עם גוגל, נסה שוב");
+      setErrorMessage("שגיאה בהתחברות עם גוגל");
       setIsGoogleLoading(false);
     }
   };

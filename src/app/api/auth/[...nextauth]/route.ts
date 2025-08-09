@@ -1,19 +1,37 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
+// Log environment variables for debugging
+console.log("Google Client ID loaded:", !!process.env.GOOGLE_CLIENT_ID);
+console.log("Google Client Secret loaded:", !!process.env.GOOGLE_CLIENT_SECRET);
+console.log("NextAuth URL:", process.env.NEXTAUTH_URL);
+
 const handler = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     }),
   ],
+
   pages: {
     signIn: '/login',
+  },
+  session: {
+    strategy: "jwt",
   },
   callbacks: {
     async signIn({ user, account, profile }) {
       console.log("Sign in attempt:", { user, account, profile });
+      console.log("Account provider:", account?.provider);
+      console.log("Account error:", account?.error);
       // Always allow sign in for Google
       return true;
     },
@@ -44,16 +62,12 @@ const handler = NextAuth({
     },
     async redirect({ url, baseUrl }) {
       console.log("Redirect callback:", { url, baseUrl });
-      // If URL is provided in the callback, use it
-      if (url.startsWith(baseUrl)) {
-        return url;
-      }
-      // Otherwise redirect to home page after successful sign in
+      // Always redirect to home page after successful sign in
       return `${baseUrl}/home`;
     },
   },
-  debug: process.env.NODE_ENV === "development",
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret",
+  debug: true, // Always enable debug for now
+  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-key-for-development",
 });
 
 export { handler as GET, handler as POST }; 

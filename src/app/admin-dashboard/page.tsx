@@ -110,18 +110,58 @@ export default function AdminDashboard() {
     
     try {
       // Save all pending status changes
-      const promises = Object.entries(pendingChanges).map(([appointmentId, status]) =>
-        fetch('/api/appointments/status', {
+      const promises = Object.entries(pendingChanges).map(async ([appointmentId, status]) => {
+        const response = await fetch('/api/appointments/status', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             appointmentId,
-            status
+            status,
+            action: 'admin_update'
           })
-        })
-      );
+        });
+        
+        // Update localStorage for client appointments
+        if (status === 'completed') {
+          // Update client's appointment status to approved
+          const appointment = filteredAppointments.find(apt => apt.appointmentId === appointmentId);
+          if (appointment) {
+            const clientAppointment = {
+              ...appointment,
+              status: 'completed'
+            };
+            // This will be handled by the API to update client localStorage
+          }
+        } else if (status === 'cancelled') {
+          // Cancel and remove appointment completely
+          await fetch('/api/appointments/status', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              action: 'cancel',
+              appointmentId: appointmentId,
+              selectedDate: filteredAppointments.find(apt => apt.appointmentId === appointmentId)?.selectedDate,
+              selectedTime: filteredAppointments.find(apt => apt.appointmentId === appointmentId)?.selectedTime
+            })
+          });
+        } else if (status === 'waiting') {
+          // Set back to waiting status
+          const appointment = filteredAppointments.find(apt => apt.appointmentId === appointmentId);
+          if (appointment) {
+            const clientAppointment = {
+              ...appointment,
+              status: 'waiting'
+            };
+            // This will be handled by the API to update client localStorage
+          }
+        }
+        
+        return response;
+      });
       
       await Promise.all(promises);
       

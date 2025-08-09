@@ -76,8 +76,8 @@ export default function Home() {
       }}>
         <div
           style={{
-            width: '240px',
-            height: '240px',
+            width: '380px',
+            height: '380px',
             borderRadius: '50%',
             background: 'transparent', // Transparent background
             display: 'flex',
