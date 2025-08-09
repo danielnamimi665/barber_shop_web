@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { formatHebrewDate } from "@/lib/date";
+import { getAppointmentBroadcast } from "@/lib/broadcast";
 
 interface Appointment {
   appointmentId: string;
@@ -182,6 +184,18 @@ export default function AdminDashboard() {
         // Clear pending changes
         setPendingChanges({});
         
+        // Broadcast the changes to other tabs
+        const broadcast = getAppointmentBroadcast();
+        Object.entries(pendingChanges).forEach(([appointmentId, status]) => {
+          const appointment = filteredAppointments.find(apt => apt.appointmentId === appointmentId);
+          if (appointment) {
+            broadcast.sendAppointmentUpdate(
+              status === 'cancelled' ? 'cancelled' : 'updated',
+              { ...appointment, status }
+            );
+          }
+        });
+        
         setSaveMessage("השינויים נשמרו בהצלחה!");
       } else {
         setSaveMessage("שגיאה בשמירת השינויים");
@@ -223,7 +237,12 @@ export default function AdminDashboard() {
   };
 
   const formatDate = (dateString: string) => {
-    // Handle timezone issues by creating date without time
+    // If it's a UTC timestamp, use formatHebrewDate
+    if (dateString.includes('T') && dateString.includes('Z')) {
+      return formatHebrewDate(dateString);
+    }
+    
+    // Handle local date format (YYYY-MM-DD)
     const [year, month, day] = dateString.split('-').map(Number);
     const date = new Date(year, month - 1, day);
     

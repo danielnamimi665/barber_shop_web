@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { toUTC, createLocalDateTime, isDateInPast } from '@/lib/date';
 
 const dataDir = path.join(process.cwd(), 'data');
 const appointmentsFile = path.join(dataDir, 'appointments.json');
@@ -82,9 +83,18 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { appointmentId, selectedDate, selectedTime, fullName, phoneNumber, serviceType, confirmed, timestamp } = body;
+    const { appointmentId, selectedDate, selectedTime, fullName, phoneNumber, serviceType, confirmed } = body;
     
     console.log('POST /api/appointments received:', body);
+    
+    // Validate date is not in past
+    if (isDateInPast(selectedDate)) {
+      return NextResponse.json({ error: 'Cannot book appointment in the past' }, { status: 400 });
+    }
+    
+    // Create UTC timestamp for the appointment
+    const appointmentUtc = createLocalDateTime(selectedDate, selectedTime);
+    const createdAtUtc = toUTC(new Date());
     
     // Ensure data directory exists
     const dataDir = path.join(process.cwd(), 'data');
@@ -104,8 +114,8 @@ export async function POST(request: NextRequest) {
     // Clean up past appointments first
     const cleanedAppointments = cleanPastAppointments(appointments);
     
-    // Add new appointment - ensure consistent date format
-    const dateKey = selectedDate; // Use the date as provided (YYYY-MM-DD format)
+    // Use date as key for organization
+    const dateKey = selectedDate;
     
     if (!cleanedAppointments[dateKey]) {
       cleanedAppointments[dateKey] = [];
@@ -120,18 +130,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Time slot already occupied' }, { status: 409 });
     }
     
-    // Add the appointment
-    cleanedAppointments[dateKey].push({
+    // Create appointment object with UTC timestamps
+    const appointmentData = {
       appointmentId,
-      selectedDate: selectedDate, // Store the original selectedDate
-      selectedTime,
+      selectedDate, // Keep local date for organization
+      selectedTime, // Keep local time for display
+      appointmentUtc, // UTC timestamp for the actual appointment
+      createdAtUtc, // UTC timestamp for when it was created
       fullName,
       phoneNumber,
       serviceType,
       confirmed,
-      timestamp,
-      status: 'waiting' // Default status
-    });
+      status: 'waiting'
+    };
+    
+    // Add the appointment
+    cleanedAppointments[dateKey].push(appointmentData);
     
     // Save to file
     fs.writeFileSync(appointmentsFile, JSON.stringify(cleanedAppointments, null, 2));
@@ -140,11 +154,17 @@ export async function POST(request: NextRequest) {
       appointmentId,
       selectedDate,
       selectedTime,
-      fullName
+      fullName,
+      appointmentUtc
     });
     
-    return NextResponse.json({ success: true, appointmentId });
+    return NextResponse.json({ 
+      success: true, 
+      appointmentId,
+      appointment: appointmentData 
+    });
   } catch (error) {
+    console.error('Error saving appointment:', error);
     return NextResponse.json({ error: 'Failed to save appointment' }, { status: 500 });
   }
 }

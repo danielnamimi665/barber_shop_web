@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { formatHebrewDate } from "@/lib/date";
+import { getAppointmentBroadcast } from "@/lib/broadcast";
 
 export default function Appointments() {
   const [appointment, setAppointment] = useState<any>(null);
@@ -27,27 +29,73 @@ export default function Appointments() {
   }, [status]);
 
   useEffect(() => {
-    const storedAppointment = localStorage.getItem('finalAppointment');
-    let parsed = null;
-    if (storedAppointment) {
-      parsed = JSON.parse(storedAppointment);
-      // Ensure serviceType is present, fallback to localStorage if needed
-      if (!parsed.serviceType) {
-        parsed.serviceType = localStorage.getItem('serviceType') || "שירות לא ידוע";
+    const loadAppointments = async () => {
+      try {
+        // Try to get appointment from localStorage first (for immediate display)
+        const storedAppointment = localStorage.getItem('finalAppointment');
+        if (storedAppointment) {
+          const parsed = JSON.parse(storedAppointment);
+          if (parsed && parsed.status !== 'cancelled') {
+            setAppointment(parsed);
+          }
+        }
+        
+        // Also fetch from API to ensure sync
+        const response = await fetch('/api/appointments');
+        if (response.ok) {
+          const data = await response.json();
+          // Find user's appointment (could be improved with user identification)
+          const userEmail = session?.user?.email;
+          if (userEmail && data) {
+            // Look through all appointments to find one matching the user
+            let userAppointment = null;
+            Object.keys(data).forEach(dateKey => {
+              if (Array.isArray(data[dateKey])) {
+                const found = data[dateKey].find((apt: any) => 
+                  apt.phoneNumber && storedAppointment && 
+                  JSON.parse(storedAppointment).phoneNumber === apt.phoneNumber
+                );
+                if (found) {
+                  userAppointment = found;
+                }
+              }
+            });
+            
+            if (userAppointment && userAppointment.status !== 'cancelled') {
+              setAppointment(userAppointment);
+              // Update localStorage with latest data
+              localStorage.setItem('finalAppointment', JSON.stringify(userAppointment));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading appointments:', error);
       }
+    };
+    
+    if (session) {
+      loadAppointments();
     }
     
-    // Don't show cancelled appointments
-    if (parsed && parsed.status === 'cancelled') {
-      setAppointment(null);
-      return;
-    }
+    // Listen for appointment updates from other tabs
+    const broadcast = getAppointmentBroadcast();
+    const cleanup = broadcast.onAppointmentUpdate(({ action, appointment: updatedAppointment }) => {
+      if (action === 'cancelled' || action === 'updated') {
+        // Reload appointments when there's an update
+        loadAppointments();
+      }
+    });
     
-    setAppointment(parsed);
-  }, []);
+    return cleanup;
+  }, [session]);
 
   const formatDate = (dateString: string) => {
-    // Handle timezone issues by creating date without time
+    // If it's a UTC timestamp, use formatHebrewDate
+    if (dateString.includes('T') && dateString.includes('Z')) {
+      return formatHebrewDate(dateString);
+    }
+    
+    // Handle local date format (YYYY-MM-DD)
     const [year, month, day] = dateString.split('-').map(Number);
     const date = new Date(year, month - 1, day);
     

@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { getCurrentDateLocal, isDateInPast, isTimeInPast, getHebrewDayName } from "@/lib/date";
 
 export default function Booking() {
   const router = useRouter();
@@ -177,7 +178,7 @@ export default function Booking() {
   };
 
   const formatDate = (date: Date) => {
-    const days = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
+    const days = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
     const months = [
       "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
       "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
@@ -190,11 +191,10 @@ export default function Booking() {
     return `${dayName}, ${day} ${month}`;
   };
 
-  // Check if date is in the past
-  const isDateInPast = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return date < today;
+  // Check if date is in the past - using imported function
+  const isDateInPastLocal = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return isDateInPast(dateStr);
   };
 
   const isDateTooFarInFuture = (date: Date) => {
@@ -206,27 +206,11 @@ export default function Booking() {
   };
 
   // Check if time is in the past for selected date
-  const isTimeInPast = (time: string) => {
+  const isTimeInPastForSelectedDate = (time: string) => {
     if (!selectedDate) return false;
-
-    const today = new Date();
-    const selectedDateOnly = new Date(selectedDate);
-    selectedDateOnly.setHours(0, 0, 0, 0);
-    const todayOnly = new Date(today);
-    todayOnly.setHours(0, 0, 0, 0);
-
-    // If selected date is today, check if time has passed
-    if (selectedDateOnly.getTime() === todayOnly.getTime()) {
-      const [hours, minutes] = time.split(':').map(Number);
-      const currentTime = new Date();
-      const currentHours = currentTime.getHours();
-      const currentMinutes = currentTime.getMinutes();
-
-      return (hours < currentHours) || (hours === currentHours && minutes <= currentMinutes);
-    }
-
-    // If selected date is in the past, all times are past
-    return selectedDateOnly < todayOnly;
+    
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    return isTimeInPast(dateStr, time);
   };
 
   // Check if time slot is occupied (booked by someone else)
@@ -236,7 +220,7 @@ export default function Booking() {
 
   // Check if time slot is unavailable (past time or occupied)
   const isTimeSlotUnavailable = (time: string) => {
-    return isTimeInPast(time) || isTimeSlotOccupied(time);
+    return isTimeInPastForSelectedDate(time) || isTimeSlotOccupied(time);
   };
 
   const canProceed = selectedDate && selectedTime &&
@@ -383,7 +367,7 @@ export default function Booking() {
                 gap: '8px'
               }}>
                 {calendarDays.filter(date => date.getMonth() === currentMonth.getMonth() && date.getFullYear() === currentMonth.getFullYear()).map((date, index) => {
-                  const isPast = isDateInPast(date);
+                  const isPast = isDateInPastLocal(date);
                   const isTooFar = isDateTooFarInFuture(date);
                   const isSelected = selectedDate &&
                     selectedDate.getDate() === date.getDate() &&
@@ -451,7 +435,7 @@ export default function Booking() {
             }}>
               {timeSlots.map(slot => {
                 const isUnavailable = isTimeSlotUnavailable(slot.time);
-                const isPastTime = isTimeInPast(slot.time);
+                const isPastTime = isTimeInPastForSelectedDate(slot.time);
                 const isOccupied = isTimeSlotOccupied(slot.time);
 
                 return (
