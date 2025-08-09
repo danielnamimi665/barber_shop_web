@@ -44,7 +44,11 @@ const handler = NextAuth({
     },
     async redirect({ url, baseUrl }) {
       console.log("Redirect callback:", { url, baseUrl });
-      // Redirect to home page after successful sign in
+      // If URL is provided in the callback, use it
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      // Otherwise redirect to home page after successful sign in
       return `${baseUrl}/home`;
     },
   },

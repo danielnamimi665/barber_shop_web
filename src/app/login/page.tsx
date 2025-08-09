@@ -29,70 +29,29 @@ export default function Login() {
   }, [session, status, router]);
 
   const handleGoogleSignIn = async () => {
-    console.log("handleGoogleSignIn function called!"); // Debug log
+    console.log("handleGoogleSignIn function called!");
     try {
       setIsGoogleLoading(true);
-      setErrorMessage(""); // Clear any previous errors
+      setErrorMessage("");
       
       console.log("Starting Google sign in...");
-      console.log("signIn function:", signIn); // Debug log
-      
-      // Check if we're in the right environment
       console.log("Current URL:", window.location.href);
-      console.log("User Agent:", navigator.userAgent);
-      console.log("Is Mobile:", /Mobile|Android|iPhone|iPad/.test(navigator.userAgent));
       
-      // Try to get the base URL dynamically
-      const baseUrl = window.location.origin;
-      console.log("Base URL:", baseUrl);
-      console.log("Current host:", window.location.host);
-      console.log("Is localhost:", window.location.hostname === 'localhost');
-      
-      // Try different approach for mobile
-      if (/Mobile|Android|iPhone|iPad/.test(navigator.userAgent)) {
-        console.log("Mobile detected, using direct redirect");
-        try {
-          await signIn("google", { 
-            callbackUrl: `${baseUrl}/home`,
-            redirect: true 
-          });
-          return;
-        } catch (mobileError) {
-          console.error("Mobile sign in error:", mobileError);
-          setErrorMessage("שגיאה במובייל - נסה לרענן את הדף");
-          setIsGoogleLoading(false);
-          return;
-        }
-      }
-      
-      // Use redirect: false to see what happens for desktop
+      // Simple approach - let NextAuth handle the redirect
       const result = await signIn("google", { 
-        callbackUrl: `${baseUrl}/home`,
-        redirect: false 
+        callbackUrl: "/home",
+        redirect: true 
       });
       
       console.log("Sign in result:", result);
       
+      // If we get here, something might have gone wrong
       if (result?.error) {
-        console.error("Google sign in error:", result.error);
+        console.error("Sign in error:", result.error);
         setErrorMessage(`שגיאה: ${result.error}`);
         setIsGoogleLoading(false);
-      } else if (result?.url) {
-        console.log("Redirecting to:", result.url);
-        // Try using window.location.replace instead of href for mobile
-        if (/Mobile|Android|iPhone|iPad/.test(navigator.userAgent)) {
-          window.location.replace(result.url);
-        } else {
-          window.location.href = result.url;
-        }
-      } else {
-        console.log("Unknown result:", result);
-        // If no URL returned, try manual redirect
-        setTimeout(() => {
-          window.location.href = `${baseUrl}/home`;
-        }, 1000);
-        setIsGoogleLoading(false);
       }
+      
     } catch (error) {
       console.error("Google sign in error:", error);
       setErrorMessage("שגיאה בהתחברות עם גוגל, נסה שוב");
@@ -147,7 +106,7 @@ export default function Login() {
       <div
         className="login-box"
         style={{
-          backgroundImage: 'url(/grey.png)', // Background image
+          backgroundImage: 'url(/grey.jpg)', // Background image
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
@@ -165,21 +124,21 @@ export default function Login() {
         }}>
         {/* Profile Image Circle */}
         <div style={{
-          width: '200px', // Enlarged
-          height: '200px', // Enlarged
+          width: '240px', // Enlarged
+          height: '240px', // Enlarged
           borderRadius: '50%',
           background: '#f0f0f0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '4px solid #e0e0e0', // Thicker border
+          border: 'none', // No border
           marginBottom: '20px', // More margin
           overflow: 'hidden',
           position: 'relative'
         }}>
           {/* Daniel Logo */}
           <img 
-            src="/logodaniel.png" // Custom logo
+            src="/daniellogo.png" // Custom logo
             alt="Daniel Hair Design Logo"
             style={{
               width: '100%',
