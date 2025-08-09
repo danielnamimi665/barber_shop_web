@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Amir Hair Design",
+  title: "Daniel Hair Design",
   description: "תספורות ועיצוב זקן",
 };
 

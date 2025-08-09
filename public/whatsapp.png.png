@@ -1,0 +1,5 @@
+<!-- This is a placeholder file. Replace with actual WhatsApp icon -->
+<svg width="48" height="48" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="24" cy="24" r="20" fill="#25D366" stroke="#128C7E" stroke-width="2"/>
+  <text x="24" y="28" text-anchor="middle" font-family="Arial" font-size="12" fill="white">💬</text>
+</svg>

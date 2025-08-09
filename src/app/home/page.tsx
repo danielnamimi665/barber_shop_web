@@ -77,7 +77,7 @@ export default function Home() {
         <div
           style={{
             backgroundColor: 'rgba(31, 41, 55, 0.8)',
-            border: '2px dashed #6b7280',
+            border: '3px solid black', // Changed border
             borderRadius: '50%',
             width: 'min(80vw, 500px)',
             height: 'min(80vw, 500px)',
@@ -86,26 +86,54 @@ export default function Home() {
             justifyContent: 'center',
             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
             backdropFilter: 'blur(10px)',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            overflow: 'hidden',
+            position: 'relative'
           }}
           onClick={() => router.push('/services')}
         >
+          {/* Daniel Logo */}
+          <img
+            src="/logodaniel.png.png" // Custom logo
+            alt="Daniel Hair Design Logo"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: '50%'
+            }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling.style.display = 'flex';
+            }}
+          />
+          {/* Fallback content */}
           <div style={{
             textAlign: 'center',
-            padding: '2rem'
+            padding: '2rem',
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0
           }}>
-            <div style={{
-              color: '#d1d5db',
-              fontSize: '1.25rem',
-              marginBottom: '1rem'
-            }}>
-              תמונה תוצג כאן
-            </div>
-            <div style={{
-              color: '#9ca3af',
-              fontSize: '1rem'
-            }}>
-              Image will appear here
+            <div>
+              <div style={{
+                color: '#d1d5db',
+                fontSize: '1.25rem',
+                marginBottom: '1rem'
+              }}>
+                תמונה תוצג כאן
+              </div>
+              <div style={{
+                color: '#9ca3af',
+                fontSize: '1rem'
+              }}>
+                Image will appear here
+              </div>
             </div>
           </div>
         </div>

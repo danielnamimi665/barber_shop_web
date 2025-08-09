@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation"; // Added usePathname
 import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
@@ -11,7 +11,8 @@ export default function Header() {
   const [loginError, setLoginError] = useState("");
   const buttonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const pathname = usePathname(); // Hook call
+  const { data: session, status } = useSession(); // Hook call
 
   const menuItems = [
     { label: "דף הבית", href: "/home" },
@@ -34,7 +35,7 @@ export default function Header() {
   };
 
   const handleAdminLogin = () => {
-    if (adminPassword === "barber") {
+    if (adminPassword === "danielbs") { // New admin password
       setShowAdminLogin(false);
       setAdminPassword("");
       setLoginError("");
@@ -53,6 +54,11 @@ export default function Header() {
   const handleSignOut = () => {
     signOut({ callbackUrl: "/login" });
   };
+
+  // Hide header on login page - moved after all hooks
+  if (pathname === '/login') {
+    return null;
+  }
 
   return (
     <>
@@ -138,7 +144,7 @@ export default function Header() {
               (e.target as HTMLDivElement).style.transform = 'scale(1)';
             }}
           >
-            Amir Hair Design
+            Daniel Hair Design
           </div>
         </div>
         {/* Black line under header */}
