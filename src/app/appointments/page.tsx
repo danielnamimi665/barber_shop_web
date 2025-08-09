@@ -47,8 +47,14 @@ export default function Appointments() {
   }, []);
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('he-IL');
+    // Handle timezone issues by creating date without time
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    const days = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+    const dayName = days[date.getDay()];
+    
+    return `${dayName}, ${day}/${month}/${year}`;
   };
 
   const getStatusDisplay = (status: string) => {

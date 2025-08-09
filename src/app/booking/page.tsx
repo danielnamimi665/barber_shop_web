@@ -147,8 +147,8 @@ export default function Booking() {
   const calendarDays = [];
   for (let i = 0; i < 42; i++) {
     const date = new Date(startDate);
-    date.setDate(startDate.getDate() + i);
-    calendarDays.push(date);
+    date.setDate(date.getDate() + i);
+    calendarDays.push(new Date(date));
   }
 
   const timeSlots = [

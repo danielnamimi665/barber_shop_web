@@ -51,6 +51,17 @@ function cleanPastAppointments(appointments: any) {
 
 export async function GET() {
   try {
+    // Ensure data directory exists
+    const dataDir = path.join(process.cwd(), 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    
+    // Ensure appointments file exists
+    if (!fs.existsSync(appointmentsFile)) {
+      fs.writeFileSync(appointmentsFile, '{}');
+    }
+    
     const data = fs.readFileSync(appointmentsFile, 'utf8');
     const appointments = JSON.parse(data);
     
@@ -60,8 +71,10 @@ export async function GET() {
     // Save cleaned appointments back to file
     fs.writeFileSync(appointmentsFile, JSON.stringify(cleanedAppointments, null, 2));
     
+    console.log('GET /api/appointments returning:', cleanedAppointments);
     return NextResponse.json(cleanedAppointments);
   } catch (error) {
+    console.error('Error in GET /api/appointments:', error);
     return NextResponse.json({ error: 'Failed to read appointments' }, { status: 500 });
   }
 }
@@ -71,6 +84,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { appointmentId, selectedDate, selectedTime, fullName, phoneNumber, serviceType, confirmed, timestamp } = body;
     
+    console.log('POST /api/appointments received:', body);
+    
+    // Ensure data directory exists
+    const dataDir = path.join(process.cwd(), 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    
+    // Ensure appointments file exists
+    if (!fs.existsSync(appointmentsFile)) {
+      fs.writeFileSync(appointmentsFile, '{}');
+    }
+    
     // Read existing appointments
     const data = fs.readFileSync(appointmentsFile, 'utf8');
     const appointments = JSON.parse(data);
@@ -78,8 +104,8 @@ export async function POST(request: NextRequest) {
     // Clean up past appointments first
     const cleanedAppointments = cleanPastAppointments(appointments);
     
-    // Add new appointment
-    const dateKey = new Date(selectedDate).toISOString().split('T')[0];
+    // Add new appointment - ensure consistent date format
+    const dateKey = selectedDate; // Use the date as provided (YYYY-MM-DD format)
     
     if (!cleanedAppointments[dateKey]) {
       cleanedAppointments[dateKey] = [];
@@ -97,18 +123,25 @@ export async function POST(request: NextRequest) {
     // Add the appointment
     cleanedAppointments[dateKey].push({
       appointmentId,
+      selectedDate: selectedDate, // Store the original selectedDate
       selectedTime,
       fullName,
       phoneNumber,
       serviceType,
       confirmed,
       timestamp,
-      status: 'waiting', // Default status
-      selectedDate: dateKey // Store the correct date
+      status: 'waiting' // Default status
     });
     
     // Save to file
     fs.writeFileSync(appointmentsFile, JSON.stringify(cleanedAppointments, null, 2));
+    
+    console.log('Appointment saved successfully:', {
+      appointmentId,
+      selectedDate,
+      selectedTime,
+      fullName
+    });
     
     return NextResponse.json({ success: true, appointmentId });
   } catch (error) {

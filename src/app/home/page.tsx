@@ -76,8 +76,8 @@ export default function Home() {
       }}>
         <div
           style={{
-            width: '380px',
-            height: '380px',
+            width: isMobile ? '280px' : '380px', // Smaller on mobile
+            height: isMobile ? '280px' : '380px', // Smaller on mobile
             borderRadius: '50%',
             background: 'transparent', // Transparent background
             display: 'flex',
