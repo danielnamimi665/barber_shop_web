@@ -58,7 +58,7 @@ export default function Appointments() {
           const userPhone = localStorage.getItem('userPhone');
           if (userPhone && data) {
             // Look through all appointments to find one matching the user
-            let userAppointment = null;
+            let userAppointment: any = null;
             Object.keys(data).forEach(dateKey => {
               if (Array.isArray(data[dateKey])) {
                 const found = data[dateKey].find((apt: any) => 

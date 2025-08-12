@@ -1,16 +1,27 @@
 "use client";
-import { useSession } from "next-auth/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Admin() {
-  const { data: session, status } = useSession();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Redirect if not authenticated
+  // Check authentication status
   useEffect(() => {
-    if (status === "unauthenticated") {
-      window.location.href = "/login";
-    }
-  }, [status]);
+    const checkLoginStatus = () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userPhone = localStorage.getItem('userPhone');
+      
+      if (isLoggedIn !== 'true' || !userPhone) {
+        window.location.href = "/login";
+        return;
+      }
+      
+      setIsLoggedIn(true);
+      setIsLoading(false);
+    };
+
+    checkLoginStatus();
+  }, []);
 
   const handleDeleteFutureAppointments = async () => {
     try {
@@ -28,7 +39,7 @@ export default function Admin() {
     }
   };
 
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <div style={{
         minHeight: "100vh",
@@ -43,7 +54,7 @@ export default function Admin() {
     );
   }
 
-  if (!session) {
+  if (!isLoggedIn) {
     return null; // Will redirect to login
   }
 
