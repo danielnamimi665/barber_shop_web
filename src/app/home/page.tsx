@@ -1,12 +1,13 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+
 
 export default function Home() {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
-  const { data: session, status } = useSession();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userPhone, setUserPhone] = useState("");
 
   useEffect(() => {
     const checkMobile = () => {
@@ -19,29 +20,25 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Redirect if not authenticated
+  // בדיקת מצב התחברות
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
+    const checkLoginStatus = () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userPhone = localStorage.getItem('userPhone');
+      
+      if (isLoggedIn !== 'true' || !userPhone) {
+        router.push("/login");
+        return;
+      }
+      
+      setIsLoggedIn(true);
+      setUserPhone(userPhone);
+    };
 
-  if (status === "loading") {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontFamily: 'Arial, sans-serif'
-      }}>
-        טוען...
-      </div>
-    );
-  }
+    checkLoginStatus();
+  }, [router]);
 
-  if (!session) {
+  if (!isLoggedIn) {
     return (
       <div style={{
         minHeight: '100vh',

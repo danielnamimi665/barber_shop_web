@@ -1,4 +1,4 @@
-import { zonedTimeToUtc, utcToZonedTime, format } from 'date-fns-tz';
+import { fromZonedTime, toZonedTime, format } from 'date-fns-tz';
 import { parseISO } from 'date-fns';
 
 const TZ = process.env.NEXT_PUBLIC_DEFAULT_TZ || 'Asia/Jerusalem';
@@ -9,7 +9,7 @@ const TZ = process.env.NEXT_PUBLIC_DEFAULT_TZ || 'Asia/Jerusalem';
  */
 export function toUTC(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  const utc = zonedTimeToUtc(d, TZ);
+  const utc = fromZonedTime(d, TZ);
   return utc.toISOString();
 }
 
@@ -18,7 +18,7 @@ export function toUTC(date: Date | string): string {
  * ISO ב־UTC → אובייקט Date לפי Jerusalem
  */
 export function fromUTC(isoUtc: string): Date {
-  const z = utcToZonedTime(isoUtc, TZ);
+  const z = toZonedTime(isoUtc, TZ);
   return z;
 }
 
@@ -52,7 +52,7 @@ export function formatHebrewDate(isoUtc: string): string {
  */
 export function getCurrentDateLocal(): string {
   const now = new Date();
-  const local = utcToZonedTime(now, TZ);
+  const local = toZonedTime(now, TZ);
   return format(local, 'yyyy-MM-dd', { timeZone: TZ });
 }
 
@@ -80,7 +80,7 @@ export function createLocalDateTime(dateStr: string, timeStr: string): string {
 export function isDateInPast(dateStr: string): boolean {
   const [year, month, day] = dateStr.split('-').map(Number);
   const inputDate = new Date(year, month - 1, day);
-  const today = utcToZonedTime(new Date(), TZ);
+  const today = toZonedTime(new Date(), TZ);
   today.setHours(0, 0, 0, 0);
   
   return inputDate < today;
@@ -97,7 +97,7 @@ export function isTimeInPast(dateStr: string, timeStr: string): boolean {
   }
   
   const [hour, minute] = timeStr.split(':').map(Number);
-  const now = utcToZonedTime(new Date(), TZ);
+  const now = toZonedTime(new Date(), TZ);
   const inputTime = new Date(now);
   inputTime.setHours(hour, minute, 0, 0);
   

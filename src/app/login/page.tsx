@@ -1,14 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
-import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+
 
 export default function Login() {
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorTimer, setErrorTimer] = useState<NodeJS.Timeout | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const { data: session, status } = useSession();
-  const router = useRouter();
+
 
   useEffect(() => {
     const checkMobile = () => {
@@ -22,64 +24,118 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    if (status === "authenticated" && session) {
-      console.log("User is signed in, redirecting to home:", session);
-      router.push("/home");
+    // בדיקה אם המשתמש כבר מחובר
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const userPhone = localStorage.getItem('userPhone');
+    
+    if (isLoggedIn === 'true' && userPhone) {
+      console.log("User already logged in, redirecting to home");
+      window.location.href = "/home";
+      return;
     }
-  }, [session, status, router]);
+  }, []);
 
-  const handleGoogleSignIn = async () => {
-    console.log("handleGoogleSignIn function called!");
+  // Cleanup effect לניקוי טיימרים
+  useEffect(() => {
+    return () => {
+      if (errorTimer) {
+        clearTimeout(errorTimer);
+      }
+    };
+  }, [errorTimer]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userPhone');
+    setSuccessMessage("");
+    setErrorMessage("");
+  };
+
+  // פונקציה להצגת הודעת שגיאה עם טיימר
+  const showErrorMessage = (message: string) => {
+    // ניקוי טיימר קודם אם קיים
+    if (errorTimer) {
+      clearTimeout(errorTimer);
+    }
+    
+    setErrorMessage(message);
+    
+    // הגדרת טיימר חדש ל-5 שניות
+    const timer = setTimeout(() => {
+      setErrorMessage("");
+      setErrorTimer(null);
+    }, 5000);
+    
+    setErrorTimer(timer);
+  };
+
+  const handleLogin = async () => {
+    console.log("handleLogin function called!");
+    
+    if (!phoneNumber || !password) {
+      showErrorMessage("אנא מלא את כל השדות");
+      return;
+    }
+
+    // בדיקה שמספר הטלפון הוא בדיוק 10 ספרות
+    if (phoneNumber.length !== 10 || !/^\d{10}$/.test(phoneNumber)) {
+      showErrorMessage("מספר טלפון מחייב 10 ספרות");
+      return;
+    }
     
     try {
-      setIsGoogleLoading(true);
+      setIsLoading(true);
       setErrorMessage("");
       
-      console.log("Starting Google sign in with redirect...");
+      console.log("Starting login with phone and password...");
       
-      // Force redirect by not awaiting the result
-      signIn("google", { 
-        callbackUrl: "/home"
+      // קריאה ל-API להתחברות
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber, password }),
       });
       
-      // Don't set loading to false - let the redirect handle it
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        // התחברות מוצלחת
+        console.log("Login successful:", data.message);
+        setErrorMessage(""); // ניקוי שגיאות קודמות
+        setSuccessMessage(""); // ניקוי הודעות הצלחה קודמות
+        
+        // שמירת פרטי המשתמש ב-localStorage
+        localStorage.setItem('userPhone', phoneNumber);
+        localStorage.setItem('isLoggedIn', 'true');
+        
+        if (data.message === "משתמש נוצר בהצלחה") {
+          // משתמש חדש - הצגת הודעת הצלחה
+          setSuccessMessage("משתמש נוצר בהצלחה! הסיסמה שלך נשמרה. כעת תועבר לדף הבית.");
+          
+          // מעבר לדף הבית אחרי 2 שניות
+          setTimeout(() => {
+            window.location.href = "/home";
+          }, 2000);
+        } else {
+          // משתמש קיים - מעבר מיידי בלי הודעה
+          window.location.href = "/home";
+        }
+      } else {
+        // שגיאה בהתחברות
+        showErrorMessage(data.error || "שגיאה בהתחברות");
+      }
       
     } catch (error) {
-      console.error("Google sign in error:", error);
-      setErrorMessage("שגיאה בהתחברות עם גוגל");
-      setIsGoogleLoading(false);
+      console.error("Login error:", error);
+      showErrorMessage("שגיאה בהתחברות. אנא נסה שוב.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (status === "loading") {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontFamily: 'Arial, sans-serif'
-      }}>
-        טוען...
-      </div>
-    );
-  }
 
-  if (status === "authenticated" && session) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontFamily: 'Arial, sans-serif'
-      }}>
-        מפנה לדף הבית...
-      </div>
-    );
-  }
 
   return (
     <div
@@ -290,69 +346,163 @@ export default function Login() {
 
 
 
-        {/* Google Sign In Button */}
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={isGoogleLoading}
-          style={{
-            width: '100%',
-            background: isGoogleLoading ? '#ccc' : '#4285f4',
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '16px',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: isGoogleLoading ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 2px 4px rgba(66, 133, 244, 0.3)'
-          }}
-          onMouseEnter={(e) => {
-            if (!isGoogleLoading) {
-              e.currentTarget.style.background = '#3367d6';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 8px rgba(66, 133, 244, 0.4)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isGoogleLoading) {
-              e.currentTarget.style.background = '#4285f4';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 4px rgba(66, 133, 244, 0.3)';
-            }
-          }}
-        >
-          {isGoogleLoading ? (
-            <div style={{
-              width: '20px',
-              height: '20px',
-              border: '2px solid #ffffff',
-              borderTop: '2px solid transparent',
-              borderRadius: '50%',
-              animation: 'rotate 1s linear infinite'
-            }} />
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-          )}
-          {isGoogleLoading ? 'מתחבר...' : 'התחבר עם Google'}
-        </button>
+        {/* Login Form */}
+        <div style={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }}>
+          {/* Phone Number Input */}
+          <div style={{
+            position: 'relative'
+          }}>
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="מספר טלפון"
+              style={{
+                width: '100%',
+                padding: '16px',
+                fontSize: '16px',
+                border: '2px solid #ddd',
+                borderRadius: '12px',
+                backgroundColor: 'white',
+                color: 'black',
+                outline: 'none',
+                textAlign: 'right',
+                direction: 'rtl'
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleLogin();
+                }
+              }}
+            />
+          </div>
+
+          {/* Password Input */}
+          <div style={{
+            position: 'relative'
+          }}>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="סיסמה"
+              style={{
+                width: '100%',
+                padding: '16px',
+                fontSize: '16px',
+                border: '2px solid #ddd',
+                borderRadius: '12px',
+                backgroundColor: 'white',
+                color: 'black',
+                outline: 'none',
+                textAlign: 'right',
+                direction: 'rtl'
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleLogin();
+                }
+              }}
+            />
+          </div>
+
+          {/* Login Button */}
+          <button
+            onClick={handleLogin}
+            disabled={isLoading}
+            style={{
+              width: '100%',
+              background: isLoading ? '#ccc' : '#4285f4',
+              color: 'white',
+              border: 'none',
+              borderRadius: '25px',
+              padding: '16px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 4px rgba(66, 133, 244, 0.3)'
+            }}
+            onMouseEnter={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.background = '#3367d6';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 8px rgba(66, 133, 244, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.background = '#4285f4';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(66, 133, 244, 0.3)';
+              }
+            }}
+          >
+            {isLoading ? (
+              <div style={{
+                width: '20px',
+                height: '20px',
+                border: '2px solid #ffffff',
+                borderTop: '2px solid transparent',
+                borderRadius: '50%',
+                animation: 'rotate 1s linear infinite'
+              }} />
+            ) : null}
+            {isLoading ? 'מתחבר...' : 'התחבר'}
+          </button>
+        </div>
+
+        {/* Success Message */}
+        {successMessage && (
+          <div style={{
+            color: '#28a745',
+            fontSize: '14px',
+            textAlign: 'center',
+            marginTop: '8px',
+            padding: '8px',
+            background: 'rgba(40, 167, 69, 0.1)',
+            borderRadius: '8px',
+            border: '1px solid rgba(40, 167, 69, 0.3)'
+          }}>
+            {successMessage}
+            <button
+              onClick={handleLogout}
+              style={{
+                marginLeft: '8px',
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                fontSize: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              התנתק
+            </button>
+          </div>
+        )}
 
         {/* Error Message */}
         {errorMessage && (
           <div style={{
-            color: errorMessage.includes('בהצלחה') ? '#28a745' : '#dc3545',
+            color: 'white',
             fontSize: '14px',
             textAlign: 'center',
-            marginTop: '8px'
+            marginTop: '8px',
+            padding: '8px',
+            background: '#dc3545',
+            borderRadius: '8px',
+            border: '1px solid #dc3545'
           }}>
             {errorMessage}
           </div>

@@ -1,12 +1,11 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 
 export default function Services() {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
-  const { data: session, status } = useSession();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -19,14 +18,24 @@ export default function Services() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Redirect if not authenticated
+  // בדיקת מצב התחברות
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
+    const checkLoginStatus = () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userPhone = localStorage.getItem('userPhone');
+      
+      if (isLoggedIn !== 'true' || !userPhone) {
+        router.push("/login");
+        return;
+      }
+      
+      setIsLoggedIn(true);
+    };
 
-  if (status === "loading") {
+    checkLoginStatus();
+  }, [router]);
+
+  if (!isLoggedIn) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -36,13 +45,9 @@ export default function Services() {
         color: 'white',
         fontFamily: 'Arial, sans-serif'
       }}>
-        טוען...
+        מעביר לעמוד התחברות...
       </div>
     );
-  }
-
-  if (!session) {
-    return null; // Will redirect to login
   }
 
   return (

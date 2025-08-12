@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+
 import { formatHebrewDate } from "@/lib/date";
 import { getAppointmentBroadcast } from "@/lib/broadcast";
 
@@ -8,7 +8,7 @@ export default function Appointments() {
   const [appointment, setAppointment] = useState<any>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const { data: session, status } = useSession();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -21,12 +21,22 @@ export default function Appointments() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Redirect if not authenticated
+  // בדיקת מצב התחברות
   useEffect(() => {
-    if (status === "unauthenticated") {
-      window.location.href = "/login";
-    }
-  }, [status]);
+    const checkLoginStatus = () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userPhone = localStorage.getItem('userPhone');
+      
+      if (isLoggedIn !== 'true' || !userPhone) {
+        window.location.href = "/login";
+        return;
+      }
+      
+      setIsLoggedIn(true);
+    };
+
+    checkLoginStatus();
+  }, []);
 
   useEffect(() => {
     const loadAppointments = async () => {
@@ -45,8 +55,8 @@ export default function Appointments() {
         if (response.ok) {
           const data = await response.json();
           // Find user's appointment (could be improved with user identification)
-          const userEmail = session?.user?.email;
-          if (userEmail && data) {
+          const userPhone = localStorage.getItem('userPhone');
+          if (userPhone && data) {
             // Look through all appointments to find one matching the user
             let userAppointment = null;
             Object.keys(data).forEach(dateKey => {
@@ -73,7 +83,7 @@ export default function Appointments() {
       }
     };
     
-    if (session) {
+    if (isLoggedIn) {
       loadAppointments();
     }
     
@@ -87,22 +97,21 @@ export default function Appointments() {
     });
     
     return cleanup;
-  }, [session]);
+      }, [isLoggedIn]);
 
-  const formatDate = (dateString: string) => {
-    // If it's a UTC timestamp, use formatHebrewDate
-    if (dateString.includes('T') && dateString.includes('Z')) {
-      return formatHebrewDate(dateString);
+  const formatDate = (dateString: string | undefined | null) => {
+    // Check if dateString exists and is valid
+    if (!dateString || typeof dateString !== 'string') {
+      return 'תאריך לא זמין';
     }
     
-    // Handle local date format (YYYY-MM-DD)
-    const [year, month, day] = dateString.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    
-    const days = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
-    const dayName = days[date.getDay()];
-    
-    return `${dayName}, ${day}/${month}/${year}`;
+    // Always use formatHebrewDate for consistent date handling
+    try {
+      return formatHebrewDate(dateString);
+    } catch (error) {
+      // Fallback for invalid dates
+      return 'תאריך לא תקין';
+    }
   };
 
   const getStatusDisplay = (status: string) => {
@@ -158,7 +167,9 @@ export default function Appointments() {
     }
   };
 
-  if (status === "loading") {
+
+
+  if (!isLoggedIn) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -168,13 +179,9 @@ export default function Appointments() {
         color: 'white',
         fontFamily: 'Arial, sans-serif'
       }}>
-        טוען...
+        מעביר לעמוד התחברות...
       </div>
     );
-  }
-
-  if (!session) {
-    return null; // Will redirect to login
   }
 
   if (!appointment) {

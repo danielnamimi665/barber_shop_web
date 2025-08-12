@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { useSession } from "next-auth/react";
+
 import { getCurrentDateLocal, isDateInPast, isTimeInPast, getHebrewDayName } from "@/lib/date";
 
 export default function Booking() {
@@ -11,7 +11,7 @@ export default function Booking() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const { data: session, status } = useSession();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -24,12 +24,22 @@ export default function Booking() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Redirect if not authenticated
+  // בדיקת מצב התחברות
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
+    const checkLoginStatus = () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userPhone = localStorage.getItem('userPhone');
+      
+      if (isLoggedIn !== 'true' || !userPhone) {
+        router.push("/login");
+        return;
+      }
+      
+      setIsLoggedIn(true);
+    };
+
+    checkLoginStatus();
+  }, [router]);
 
   // Load all existing appointments on component mount
   useEffect(() => {
@@ -120,7 +130,9 @@ export default function Booking() {
     }
   }, [selectedDate]);
 
-  if (status === "loading") {
+
+
+  if (!isLoggedIn) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -130,25 +142,29 @@ export default function Booking() {
         color: 'white',
         fontFamily: 'Arial, sans-serif'
       }}>
-        טוען...
+        מעביר לעמוד התחברות...
       </div>
     );
-  }
-
-  if (!session) {
-    return null; // Will redirect to login
   }
 
   // Generate calendar data for current month
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+  
+  // Calculate the start date for the calendar grid
+  // We want to show the full weeks that contain the month
   const startDate = new Date(firstDay);
-  startDate.setDate(startDate.getDate() - firstDay.getDay());
+  const dayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  
+  // Go back to the previous Sunday to start the calendar week
+  // This ensures we show complete weeks
+  startDate.setDate(startDate.getDate() - dayOfWeek);
 
   const calendarDays = [];
+  // Generate 6 weeks (42 days) to ensure we cover the entire month
   for (let i = 0; i < 42; i++) {
     const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
+    date.setDate(startDate.getDate() + i);
     calendarDays.push(new Date(date));
   }
 

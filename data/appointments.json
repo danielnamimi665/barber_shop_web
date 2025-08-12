@@ -1,13 +1,13 @@
 {
-  "2025-08-03": [
+  "2025-08-16T21:00:00.000Z": [
     {
-      "appointmentId": "appointment_1753978550946_hp61zb3w5",
-      "selectedTime": "9:00",
-      "fullName": "ךלחי",
-      "phoneNumber": "0506665558",
+      "appointmentId": "appointment_1754939705199_w7x47kgpd",
+      "selectedTime": "10:00",
+      "fullName": "דן",
+      "phoneNumber": "0544920888",
       "serviceType": "תספורת+עיצוב זקן",
       "confirmed": true,
-      "timestamp": "2025-07-31T16:15:50.946Z",
+      "timestamp": "2025-08-11T19:15:05.199Z",
       "status": "completed"
     }
   ]

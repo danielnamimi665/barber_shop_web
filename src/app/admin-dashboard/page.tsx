@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+
 import { formatHebrewDate } from "@/lib/date";
 import { getAppointmentBroadcast } from "@/lib/broadcast";
 
@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   const [saveMessage, setSaveMessage] = useState("");
   const [currentFilter, setCurrentFilter] = useState<'all' | 'today' | 'tomorrow' | 'maximum'>('all');
   const [pendingChanges, setPendingChanges] = useState<{ [appointmentId: string]: string }>({});
-  const { data: session, status } = useSession();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const loadAppointments = async () => {
@@ -57,12 +57,22 @@ export default function AdminDashboard() {
     filterAppointments();
   }, [appointments, currentFilter]);
 
-  // Redirect if not authenticated
+  // בדיקת מצב התחברות
   useEffect(() => {
-    if (status === "unauthenticated") {
-      window.location.href = "/login";
-    }
-  }, [status]);
+    const checkLoginStatus = () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userPhone = localStorage.getItem('userPhone');
+      
+      if (isLoggedIn !== 'true' || !userPhone) {
+        window.location.href = "/login";
+        return;
+      }
+      
+      setIsLoggedIn(true);
+    };
+
+    checkLoginStatus();
+  }, []);
 
   const filterAppointments = () => {
     if (!appointments) return;
@@ -256,23 +266,21 @@ export default function AdminDashboard() {
     return timeString;
   };
 
-  if (status === "loading") {
+
+
+  if (!isLoggedIn) {
     return (
       <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "white",
-        fontSize: "18px"
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontFamily: 'Arial, sans-serif'
       }}>
-        טוען...
+        מעביר לעמוד התחברות...
       </div>
     );
-  }
-
-  if (!session) {
-    return null; // Will redirect to login
   }
 
   if (isLoading) {

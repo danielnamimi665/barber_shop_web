@@ -1,13 +1,13 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+
 
 export default function Summary() {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const [appointmentData, setAppointmentData] = useState<any>(null);
-  const { data: session, status } = useSession();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -20,12 +20,22 @@ export default function Summary() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Redirect if not authenticated
+  // בדיקת מצב התחברות
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
+    const checkLoginStatus = () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userPhone = localStorage.getItem('userPhone');
+      
+      if (isLoggedIn !== 'true' || !userPhone) {
+        router.push("/login");
+        return;
+      }
+      
+      setIsLoggedIn(true);
+    };
+
+    checkLoginStatus();
+  }, [router]);
 
   useEffect(() => {
     // Get data from localStorage
@@ -62,20 +72,23 @@ export default function Summary() {
     
     try {
       // Try to save to centralized API first
-      const response = await fetch('/api/appointments', {
+      const response = await fetch('/api/appointments/save-all', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          appointmentId,
-          selectedDate: appointmentData.selectedDate,
-          selectedTime: appointmentData.selectedTime,
-          fullName: appointmentData.fullName,
-          phoneNumber: appointmentData.phoneNumber,
-          serviceType,
-          confirmed: true,
-          timestamp: new Date().toISOString()
+          appointments: [{
+            appointmentId,
+            selectedDate: appointmentData.selectedDate,
+            selectedTime: appointmentData.selectedTime,
+            fullName: appointmentData.fullName,
+            phoneNumber: appointmentData.phoneNumber,
+            serviceType,
+            confirmed: true,
+            timestamp: new Date().toISOString(),
+            status: 'waiting'
+          }]
         })
       });
       
@@ -167,7 +180,9 @@ export default function Summary() {
     router.push('/details');
   };
 
-  if (status === "loading") {
+
+
+  if (!isLoggedIn) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -177,13 +192,9 @@ export default function Summary() {
         color: 'white',
         fontFamily: 'Arial, sans-serif'
       }}>
-        טוען...
+        מעביר לעמוד התחברות...
       </div>
     );
-  }
-
-  if (!session) {
-    return null; // Will redirect to login
   }
 
   if (!appointmentData) {

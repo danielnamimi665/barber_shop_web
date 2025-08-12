@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation"; // Added usePathname
-import { useSession, signOut } from "next-auth/react";
+
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -12,13 +12,31 @@ export default function Header() {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
   const pathname = usePathname(); // Hook call
-  const { data: session, status } = useSession(); // Hook call
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userPhone, setUserPhone] = useState("");
 
   const menuItems = [
     { label: "דף הבית", href: "/home" },
     { label: "התורים שלי", href: "/appointments" },
     { label: "יצירת קשר", href: "/contact" },
   ];
+
+  useEffect(() => {
+    // בדיקת מצב התחברות
+    const checkLoginStatus = () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userPhone = localStorage.getItem('userPhone');
+      setIsLoggedIn(isLoggedIn === 'true');
+      setUserPhone(userPhone || '');
+    };
+
+    checkLoginStatus();
+    
+    // האזנה לשינויים ב-localStorage
+    window.addEventListener('storage', checkLoginStatus);
+    
+    return () => window.removeEventListener('storage', checkLoginStatus);
+  }, []);
 
   useEffect(() => {
     if (menuOpen && buttonRef.current) {
@@ -52,10 +70,14 @@ export default function Header() {
   };
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: "/login" });
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userPhone');
+    setIsLoggedIn(false);
+    setUserPhone("");
+    router.push("/login");
   };
 
-  // Hide header on login page - moved after all hooks
+  // Hide header on login page completely
   if (pathname === '/login') {
     return null;
   }
@@ -308,33 +330,33 @@ export default function Header() {
             </a>
           ))}
           
-          {/* Sign In/Out Button */}
-          {session ? (
-            <button
-              onClick={handleSignOut}
-              style={{
-                display: 'block',
-                width: '100%',
-                padding: '0.75rem 1rem',
-                color: 'white',
-                textDecoration: 'none',
-                fontSize: '1rem',
-                transition: 'background-color 0.2s ease',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                textAlign: 'right'
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = 'rgba(55, 65, 81, 0.8)';
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-              }}
-            >
-              התנתקות ({session.user?.name || session.user?.email})
-            </button>
-          ) : (
+                     {/* Sign In/Out Button */}
+           {isLoggedIn ? (
+             <button
+               onClick={handleSignOut}
+               style={{
+                 display: 'block',
+                 width: '100%',
+                 padding: '0.75rem 1rem',
+                 color: 'white',
+                 textDecoration: 'none',
+                 fontSize: '1rem',
+                 transition: 'background-color 0.2s ease',
+                 background: 'none',
+                 border: 'none',
+                 cursor: 'pointer',
+                 textAlign: 'right'
+               }}
+               onMouseEnter={(e) => {
+                 (e.target as HTMLButtonElement).style.backgroundColor = 'rgba(55, 65, 81, 0.8)';
+               }}
+               onMouseLeave={(e) => {
+                 (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
+               }}
+             >
+               התנתקות ({userPhone})
+             </button>
+           ) : (
             <a
               href="/login"
               style={{
